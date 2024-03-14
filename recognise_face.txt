@@ -1,0 +1,55 @@
+import face_recognition
+import os
+import glob
+
+# Load an image from the 'unknown' folder in the same directory
+dirname = os.path.dirname(__file__)
+unknown_image_path = os.path.join(dirname, 'unknown/*.jpg')
+
+# Get a list of all image files in the 'unknown' folder
+unknown_image_files = glob.glob(unknown_image_path)
+
+# Choose the first image file
+if len(unknown_image_files) > 0:
+    unknown_image_file = unknown_image_files[0]
+else:
+    print("Error: No image found in the 'unknown' folder.")
+    exit()
+
+# Load the image
+unknown_image = face_recognition.load_image_file(unknown_image_file)
+
+# Find face locations and encodings in the unknown image
+unknown_face_locations = face_recognition.face_locations(unknown_image)
+unknown_face_encodings = face_recognition.face_encodings(unknown_image, unknown_face_locations)
+
+# Load known faces and their names
+known_face_encodings = []
+known_face_names = []
+known_people_path = os.path.join(dirname, 'known_people/')
+
+# Get a list of all image files in the 'known_people' folder
+known_image_files = glob.glob(known_people_path + '*.jpg')
+
+# Load each known face and its name
+for known_image_file in known_image_files:
+    known_name = os.path.splitext(os.path.basename(known_image_file))[0]
+    known_image = face_recognition.load_image_file(known_image_file)
+    known_encoding = face_recognition.face_encodings(known_image)[0]
+    known_face_encodings.append(known_encoding)
+    known_face_names.append(known_name)
+
+# Compare unknown faces with known faces
+for unknown_face_encoding in unknown_face_encodings:
+    matches = face_recognition.compare_faces(known_face_encodings, unknown_face_encoding)
+
+    # If a match was found in known_face_encodings, print the corresponding name
+    found_match = False
+    for i, match in enumerate(matches):
+        if match:
+            print(f"Found match: {known_face_names[i]}")
+            found_match = True
+            break
+
+    if not found_match:
+        print("No match found")
